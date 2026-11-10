@@ -1,0 +1,141 @@
+/* Responsive layouts and motion preferences */
+@media (min-width: 600px) {
+  .stat-grid,
+  .company-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .filters-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dashboard-panels {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dashboard-panels > :last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+    width: min(100%, calc((100% - var(--space-4)) / 2));
+    justify-self: center;
+  }
+
+  .login-wrap {
+    grid-template-columns: 0.9fr 1.1fr;
+  }
+
+  .login-side {
+    padding: var(--space-7);
+  }
+}
+
+@media (min-width: 1024px) {
+  .stat-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .company-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .filters-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 899.98px) {
+  .dashboard-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .dashboard-tools {
+    justify-content: flex-start;
+  }
+
+  .dashboard-date {
+    text-align: left;
+  }
+}
+
+@media (max-width: 599.98px) {
+  .dashboard-filter {
+    width: 100%;
+  }
+
+  .dashboard-panels > :last-child:nth-child(odd) {
+    grid-column: auto;
+    width: auto;
+  }
+
+  .page-shell {
+    padding: var(--space-5) var(--space-4) var(--space-6);
+  }
+
+  .page-heading {
+    padding: var(--space-4);
+  }
+
+  .page-heading h1 {
+    font-size: var(--font-xl);
+  }
+
+  .section-heading h2 {
+    font-size: var(--font-lg);
+  }
+
+  .panel {
+    padding: var(--space-4);
+  }
+
+  .login-page {
+    padding: var(--space-3) 0;
+  }
+
+  .login-wrap {
+    width: calc(100% - 24px);
+    min-height: 0;
+  }
+
+  .login-side {
+    padding: var(--space-5);
+  }
+
+  .login-side h1 {
+    font-size: var(--font-2xl);
+  }
+
+  .login-side .lead {
+    margin-bottom: 0;
+    font-size: var(--font-base);
+  }
+
+  .demo-credentials {
+    margin-top: var(--space-3);
+    padding: var(--space-3);
+  }
+
+  .login-form {
+    padding: var(--space-4);
+  }
+
+  .table-responsive {
+    max-width: 100%;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+  }
+
+  .table-responsive table {
+    min-width: 760px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
