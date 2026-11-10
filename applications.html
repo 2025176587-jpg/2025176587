@@ -24,6 +24,10 @@
 			<p>Search and filter every application you have sent.</p>
 		</section>
 		<section class="panel" aria-label="Application list and filters">
+			<div class="section-heading">
+				<div><h2>Your applications</h2><p class="small mb-0">Add and manage your internship applications.</p></div>
+				<button id="addApplication" class="btn btn-mark" type="button"><i class="bi bi-plus-lg" aria-hidden="true"></i> Add application</button>
+			</div>
 			<div class="filters-grid">
 				<input id="search" class="form-control" placeholder="Search company or role" aria-label="Search company or role">
 				<select id="filter" class="form-select" aria-label="Filter by status">
@@ -54,7 +58,7 @@
 					</div>
 					<div class="modal-body">
 						<input id="appId" type="hidden">
-						<label class="form-label" for="appCompany">Company</label><input id="appCompany" class="form-control mb-3" readonly>
+						<label class="form-label" for="appCompany">Company</label><input id="appCompany" class="form-control mb-3" required>
 						<label class="form-label" for="appRole">Role</label><input id="appRole" class="form-control mb-3" required>
 						<label class="form-label" for="appCity">City</label><input id="appCity" class="form-control mb-3" required>
 						<label class="form-label" for="appDate">Application date</label><input id="appDate" type="date" class="form-control mb-3" required>
