@@ -1,7 +1,7 @@
 /* InternTrack – shared logic: data, auth guard, navbar/footer, page renderers */
 
 // Demo data
-const APPS=[
+const DEMO_APPS=[
  {id:1,company:'Petronas Digital',role:'Web Developer Intern',status:'Interview',date:'2026-07-03',city:'Kuala Lumpur'},
  {id:2,company:'Maybank Tech',role:'UI/UX Intern',status:'Applied',date:'2026-07-15',city:'Kuala Lumpur'},
  {id:3,company:'Grab Malaysia',role:'Frontend Intern',status:'Offer',date:'2026-06-20',city:'Petaling Jaya'},
@@ -12,6 +12,7 @@ const APPS=[
  {id:8,company:'MIMOS',role:'Software Intern',status:'Applied',date:'2026-08-21',city:'Kuala Lumpur'},
  {id:9,company:'Intel Malaysia',role:'QA Intern',status:'Offer',date:'2026-07-25',city:'Bayan Lepas'}
 ];
+let APPS=[];
 const COMPANIES=[
  {name:'Petronas Digital',industry:'Energy',city:'Kuala Lumpur',allowance:1500,open:3},
  {name:'Grab Malaysia',industry:'Tech',city:'Petaling Jaya',allowance:1800,open:5},
@@ -36,6 +37,19 @@ const session=()=>{
  }
  return stored;
 };
+const applicationStorageKey=user=>`it_applications_${encodeURIComponent(user)}`;
+function loadApplications(){
+ const me=session();
+ if(!me)return APPS=[];
+ const saved=localStorage.getItem(applicationStorageKey(me.user));
+ if(saved!==null)APPS=JSON.parse(saved);
+ else APPS=me.user===DEMO_USER.user?DEMO_APPS.map(app=>({...app})):[];
+ return APPS;
+}
+function saveApplications(){
+ const me=session();
+ if(me)localStorage.setItem(applicationStorageKey(me.user),JSON.stringify(APPS));
+}
 const logout=()=>{sessionStorage.removeItem('it_session');location.href='index.html'};
 
 // Shared layout 
@@ -101,6 +115,7 @@ function initLogin(){
   if(getUsers().some(x=>x.user.toLowerCase()===username.toLowerCase())) return show('That username is taken. Choose another.');
   list.push({user:username,pass:password,name});
   localStorage.setItem('it_users',JSON.stringify(list));
+  localStorage.setItem(applicationStorageKey(username),'[]');
   err.classList.add('d-none');
   document.getElementById('ok').classList.remove('d-none');
   document.querySelector('[data-bs-target="#tabLogin"]').click();
@@ -111,6 +126,7 @@ function initLogin(){
 function initDashboard(){
  layout('dashboard.html');
  const me=session();
+ loadApplications();
  const now=new Date();
  const greeting=now.getHours()<12?'Good morning':now.getHours()<18?'Good afternoon':'Good evening';
  document.getElementById('dashboardName').textContent=me.name;
@@ -150,6 +166,7 @@ function initDashboard(){
 // Applications
 function initApplications(){
  layout('applications.html');
+ loadApplications();
  const searchInput=document.getElementById('search');
  const statusFilter=document.getElementById('filter');
  const companyFilter=document.getElementById('companyFilter');
@@ -157,9 +174,16 @@ function initApplications(){
  const sortSelect=document.getElementById('sort');
  const tbody=document.getElementById('tbody');
  const count=document.getElementById('count');
- const companyNames=[...new Set(APPS.map(app=>app.company))].sort();
- companyNames.forEach(name=>companyFilter.add(new Option(name,name)));
- [...new Set(APPS.map(app=>app.date.slice(0,4)))].sort().reverse().forEach(year=>dateFilter.add(new Option(year,year)));
+ const refreshFilters=()=>{
+  const selectedCompany=companyFilter.value, selectedYear=dateFilter.value;
+  companyFilter.innerHTML='<option value="All">All companies</option>';
+  dateFilter.innerHTML='<option value="All">All dates</option>';
+  [...new Set(APPS.map(app=>app.company))].sort().forEach(name=>companyFilter.add(new Option(name,name)));
+  [...new Set(APPS.map(app=>app.date.slice(0,4)))].sort().reverse().forEach(year=>dateFilter.add(new Option(year,year)));
+  if([...companyFilter.options].some(option=>option.value===selectedCompany))companyFilter.value=selectedCompany;
+  if([...dateFilter.options].some(option=>option.value===selectedYear))dateFilter.value=selectedYear;
+ };
+ refreshFilters();
  const params=new URLSearchParams(location.search);
  const requestedCompany=params.get('company');
  if(requestedCompany)searchInput.value=requestedCompany;
@@ -178,25 +202,29 @@ function initApplications(){
   else rows.sort((a,b)=>b.date.localeCompare(a.date));
   tbody.innerHTML=rows.length?rows.map(app=>`<tr><td class="fw-bold">${app.company}</td><td>${app.role}</td><td>${app.city}</td><td>${app.date}</td>
    <td><span class="badge-st ${statusClass(app.status)}">${app.status}</span></td><td><div class="application-actions"><button class="btn btn-outline-secondary" type="button" data-action="view" data-id="${app.id}" aria-label="View ${app.company} application"><i class="bi bi-eye" aria-hidden="true"></i> View</button><button class="btn btn-outline-primary" type="button" data-action="edit" data-id="${app.id}" aria-label="Edit ${app.company} application"><i class="bi bi-pencil" aria-hidden="true"></i> Edit</button><button class="btn btn-outline-danger" type="button" data-action="delete" data-id="${app.id}" aria-label="Delete ${app.company} application"><i class="bi bi-trash" aria-hidden="true"></i> Delete</button></div></td></tr>`).join('')
-   :'<tr><td colspan="6"><div class="empty-state"><i class="bi bi-search" aria-hidden="true"></i>No applications match. Clear the search or filter.</div></td></tr>';
+   :`<tr><td colspan="6"><div class="empty-state"><i class="bi bi-${APPS.length?'search':'briefcase'}" aria-hidden="true"></i>${APPS.length?'No applications match. Clear the search or filter.':'No applications yet. Add your first application to get started.'}</div></td></tr>`;
   count.textContent=rows.length+' of '+APPS.length+' shown';
  };
  const openApplication=(app,editing)=>{
-  if(!app)return;
-  document.getElementById('applicationModalTitle').textContent=editing?'Edit application':'Application details';
-  document.getElementById('appId').value=app.id;
-  document.getElementById('appCompany').value=app.company;
-  document.getElementById('appRole').value=app.role;
-  document.getElementById('appCity').value=app.city;
-  document.getElementById('appDate').value=app.date;
-  document.getElementById('appStatus').value=app.status;
+  const creating=!app;
+  const details=app||{company:'',role:'',city:'',date:'',status:'Applied'};
+  document.getElementById('applicationModalTitle').textContent=creating?'Add application':editing?'Edit application':'Application details';
+  document.getElementById('appId').value=app?app.id:'';
+  document.getElementById('appCompany').value=details.company;
+  document.getElementById('appRole').value=details.role;
+  document.getElementById('appCity').value=details.city;
+  document.getElementById('appDate').value=details.date;
+  document.getElementById('appStatus').value=details.status;
+  document.getElementById('appCompany').readOnly=!creating;
   document.getElementById('appRole').readOnly=!editing;
   document.getElementById('appCity').readOnly=!editing;
   document.getElementById('appDate').readOnly=!editing;
   document.getElementById('appStatus').disabled=!editing;
   document.getElementById('saveApplication').classList.toggle('d-none',!editing);
+  document.getElementById('saveApplication').textContent=creating?'Add application':'Save changes';
   modal.show();
  };
+ document.getElementById('addApplication').addEventListener('click',()=>openApplication(null,true));
  [searchInput,statusFilter,companyFilter,dateFilter,sortSelect].forEach(control=>control.addEventListener(control===searchInput?'input':'change',draw));
  tbody.addEventListener('click',event=>{
   const button=event.target.closest('button[data-action]');
@@ -208,18 +236,32 @@ function initApplications(){
   if(button.dataset.action==='edit')openApplication(app,true);
   if(button.dataset.action==='delete'&&confirm(`Delete the ${app.company} application?`)){
    APPS.splice(index,1);
+   saveApplications();
    draw();
    showToast('Application deleted.');
   }
  });
  document.getElementById('applicationForm').addEventListener('submit',event=>{
   event.preventDefault();
-  const app=APPS.find(item=>item.id===Number(document.getElementById('appId').value));
+  const id=document.getElementById('appId').value;
+  let app=APPS.find(item=>item.id===Number(id));
+  const creating=!id;
+  if(creating)app={id:APPS.reduce((max,item)=>Math.max(max,item.id),0)+1};
   if(!app)return;
+  app.company=document.getElementById('appCompany').value.trim();
   app.role=document.getElementById('appRole').value.trim();
   app.city=document.getElementById('appCity').value.trim();
   app.date=document.getElementById('appDate').value;
   app.status=document.getElementById('appStatus').value;
+  if(creating){
+   APPS.push(app);
+   searchInput.value='';
+   statusFilter.value='All';
+   companyFilter.value='All';
+   dateFilter.value='All';
+   refreshFilters();
+  }
+  saveApplications();
   modal.hide();
   draw();
   showToast('Application updated.');
