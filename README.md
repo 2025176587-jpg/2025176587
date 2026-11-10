@@ -11,7 +11,7 @@ A static web application for tracking internship applications, reviewing progres
 - Login and registration with feedback (simulated, no database); usernames must match exactly, including capitalization. Registered accounts are stored in browser local storage.
 - Shared responsive Bootstrap navigation, breadcrumbs, signed-in profile, and footer on authenticated pages.
 - Personalized dashboard summary cards with status deep-links, recent-application filtering, interview follow-ups, progress bars, and interactive Chart.js charts.
-- Search, status/company/year filters, sorting, and view/edit/delete controls for applications.
+- User-specific application data with add, search, status/company/year filters, sorting, edit, and delete controls. New accounts start with no applications.
 - Searchable company cards and an allowance chart.
 - Responsive layouts: one column below 600px, two columns from 600px, and three to four columns from 1024px.
 
@@ -44,7 +44,7 @@ README.md
 
 ## Assumptions and limitations
 - Application dates represent submission dates. The sample data has no interview appointments or deadline fields, so no calendar dates are inferred.
-- Application edits and deletions affect the current page session only; the bundled application records are demo data. Account registration persists locally in the browser.
+- Application additions, edits, and deletions persist in browser local storage separately for each account. New accounts start empty; the demo account retains its bundled sample applications until changed.
 - Authentication uses hardcoded demo credentials and browser storage; it is not suitable for production accounts or sensitive data. A real deployment needs server-side authentication, password hashing, and protected sessions.
 - External font, Bootstrap, Bootstrap Icons, and Chart.js assets are loaded from CDNs.
 
