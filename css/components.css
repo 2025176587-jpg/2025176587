@@ -70,6 +70,15 @@
   color: var(--success);
 }
 
+.stat.s5 {
+  border-top-color: #b13d48;
+}
+
+.stat.s5 .stat-icon {
+  background: #f8e6e8;
+  color: #8c2833;
+}
+
 .stat .num {
   color: var(--text);
   font-size: 2rem;
@@ -251,6 +260,32 @@
 .company-card p {
   margin: 2px 0 0;
   font-size: var(--font-sm);
+}
+
+.company-type {
+  color: var(--primary);
+  font-weight: 800;
+}
+
+.company-tracking {
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border);
+  font-size: var(--font-sm);
+}
+
+.company-application-list {
+  display: grid;
+  gap: var(--space-2);
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.company-application-list li {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-2);
 }
 
 .company-meta {
