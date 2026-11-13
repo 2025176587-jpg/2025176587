@@ -19,10 +19,17 @@ const COMPANIES=[
  {name:'Telekom Malaysia',industry:'Telecom',city:'Cyberjaya',allowance:1200,open:2},
  {name:'Intel Malaysia',industry:'Semiconductor',city:'Bayan Lepas',allowance:2000,open:4},
  {name:'Maybank Tech',industry:'Finance',city:'Kuala Lumpur',allowance:1400,open:2},
- {name:'Shopee MY',industry:'E-commerce',city:'Kuala Lumpur',allowance:1700,open:6}
+ {name:'Shopee MY',industry:'E-commerce',city:'Kuala Lumpur',allowance:1700,open:6},
+ {name:'AirAsia Digital',industry:'Aviation & Travel',city:'Sepang',allowance:null,open:null},
+ {name:'Axiata',industry:'Telecom',city:'Kuala Lumpur',allowance:null,open:null},
+ {name:'MIMOS',industry:'Research & Development',city:'Kuala Lumpur',allowance:null,open:null}
 ];
+const INDUSTRIES=[...new Set(COMPANIES.map(company=>company.industry).concat(['Agriculture','Business Services','Construction','Education','Energy','Government','Healthcare','Hospitality','Logistics','Manufacturing','Media','Non-profit','Public sector','Real Estate','Retail','Technology','Other']))].sort();
 const COLORS={Applied:'#3D5963',Interview:'#E4B23C',Offer:'#18764F',Rejected:'#B13D48'};
 const BADGE={Applied:'status-applied',Interview:'status-interview',Offer:'status-offer',Rejected:'status-rejected'};
+const escapeHTML=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+const companyIndustry=name=>COMPANIES.find(company=>company.name.toLowerCase()===String(name).trim().toLowerCase())?.industry
+ ||APPS.find(app=>app.industry&&app.company.toLowerCase()===String(name).trim().toLowerCase())?.industry||'';
 
 // Auth
 const DEMO_USER={user:'NurFatihah',pass:'ims566',name:'NurFatihah'};
@@ -44,6 +51,7 @@ function loadApplications(){
  const saved=localStorage.getItem(applicationStorageKey(me.user));
  if(saved!==null)APPS=JSON.parse(saved);
  else APPS=me.user===DEMO_USER.user?DEMO_APPS.map(app=>({...app})):[];
+ APPS=APPS.map(app=>({...app,industry:app.industry||companyIndustry(app.company)||'Other'}));
  return APPS;
 }
 function saveApplications(){
@@ -134,19 +142,19 @@ function initDashboard(){
  document.getElementById('dashboardDate').textContent=now.toLocaleDateString('en-MY',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
  const c=countBy('status');
  document.getElementById('stats').innerHTML=[
-  ['All','Total applications',APPS.length,'','bi-briefcase'],['Applied','Pending',c.Applied||0,'s2','bi-hourglass-split'],['Interview','Interviews',c.Interview||0,'s3','bi-calendar2-check'],['Offer','Offers',c.Offer||0,'s4','bi-award']
+  ['All','Total applications',APPS.length,'','bi-briefcase'],['Applied','Pending',c.Applied||0,'s2','bi-hourglass-split'],['Interview','Interviews',c.Interview||0,'s3','bi-calendar2-check'],['Offer','Offers',c.Offer||0,'s4','bi-award'],['Rejected','Rejected',c.Rejected||0,'s5','bi-x-circle']
  ].map(s=>`<a class="panel stat stat-link ${s[3]}" href="applications.html${s[0]==='All'?'':'?status='+s[0]}" aria-label="View ${s[1].toLowerCase()}"><span class="stat-icon"><i class="bi ${s[4]}" aria-hidden="true"></i></span><span><span class="num">${s[2]}</span><span class="stat-label">${s[1]}</span><span class="stat-hint">View details <i class="bi bi-arrow-right" aria-hidden="true"></i></span></span></a>`).join('');
  const recentFilter=document.getElementById('recentFilter');
  const renderRecent=()=>{
   const filtered=APPS.filter(app=>recentFilter.value==='All'||app.status===recentFilter.value)
    .sort((a,b)=>b.date.localeCompare(a.date)).slice(0,5);
   document.getElementById('recentCount').textContent=`Showing ${filtered.length} ${filtered.length===1?'application':'applications'}`;
-  document.getElementById('recentBody').innerHTML=filtered.length?filtered.map(app=>`<tr><td class="fw-bold">${app.company}</td><td>${app.role}</td><td><span class="badge-st ${BADGE[app.status]}">${app.status}</span></td></tr>`).join(''):'<tr><td colspan="3"><div class="empty-state"><i class="bi bi-inbox" aria-hidden="true"></i>No applications in this stage yet.</div></td></tr>';
+  document.getElementById('recentBody').innerHTML=filtered.length?filtered.map(app=>`<tr><td class="fw-bold">${escapeHTML(app.company)}</td><td>${escapeHTML(app.industry)}</td><td>${escapeHTML(app.role)}</td><td><span class="badge-st ${BADGE[app.status]}">${escapeHTML(app.status)}</span></td></tr>`).join(''):'<tr><td colspan="4"><div class="empty-state"><i class="bi bi-inbox" aria-hidden="true"></i>No applications in this stage yet.</div></td></tr>';
  };
  recentFilter.addEventListener('change',renderRecent);
  renderRecent();
  const interviews=APPS.filter(app=>app.status==='Interview');
- document.getElementById('upcomingList').innerHTML=interviews.length?interviews.map(app=>`<div class="tracker-item"><i class="bi bi-calendar-event" aria-hidden="true"></i><div><strong>${app.company}</strong><div class="small text-muted">Interview status recorded; no meeting date is listed.</div></div></div>`).join(''):'<div class="empty-state"><i class="bi bi-calendar2-x" aria-hidden="true"></i>No upcoming deadlines are tracked yet.</div>';
+ document.getElementById('upcomingList').innerHTML=interviews.length?interviews.map(app=>`<div class="tracker-item"><i class="bi bi-calendar-event" aria-hidden="true"></i><div><strong>${escapeHTML(app.company)}</strong><div class="small text-muted">Interview status recorded; no meeting date is listed.</div></div></div>`).join(''):'<div class="empty-state"><i class="bi bi-calendar2-x" aria-hidden="true"></i>No upcoming deadlines are tracked yet.</div>';
  const progress=document.getElementById('progressOverview');
  const completed=(c.Interview||0)+(c.Offer||0);
  const progressItems=[['Applications submitted',APPS.length,APPS.length],['Interview stage',c.Interview||0,APPS.length],['Offers received',c.Offer||0,APPS.length]];
@@ -174,6 +182,10 @@ function initApplications(){
  const sortSelect=document.getElementById('sort');
  const tbody=document.getElementById('tbody');
  const count=document.getElementById('count');
+ const industryInput=document.getElementById('appIndustry');
+ const companyInput=document.getElementById('appCompany');
+ const industryList=document.getElementById('companyTypes');
+ industryList.innerHTML=INDUSTRIES.map(industry=>`<option value="${escapeHTML(industry)}"></option>`).join('');
  const refreshFilters=()=>{
   const selectedCompany=companyFilter.value, selectedYear=dateFilter.value;
   companyFilter.innerHTML='<option value="All">All companies</option>';
@@ -196,26 +208,28 @@ function initApplications(){
   const rows=APPS.filter(app=>(statusFilter.value==='All'||app.status===statusFilter.value)
     &&(companyFilter.value==='All'||app.company===companyFilter.value)
     &&(dateFilter.value==='All'||app.date.startsWith(dateFilter.value))
-    &&(app.company+' '+app.role+' '+app.city).toLowerCase().includes(q));
+    &&(app.company+' '+app.industry+' '+app.role+' '+app.city).toLowerCase().includes(q));
   if(sortSelect.value==='oldest')rows.sort((a,b)=>a.date.localeCompare(b.date));
   else if(sortSelect.value==='company')rows.sort((a,b)=>a.company.localeCompare(b.company));
   else rows.sort((a,b)=>b.date.localeCompare(a.date));
-  tbody.innerHTML=rows.length?rows.map(app=>`<tr><td class="fw-bold">${app.company}</td><td>${app.role}</td><td>${app.city}</td><td>${app.date}</td>
-   <td><span class="badge-st ${statusClass(app.status)}">${app.status}</span></td><td><div class="application-actions"><button class="btn btn-outline-secondary" type="button" data-action="view" data-id="${app.id}" aria-label="View ${app.company} application"><i class="bi bi-eye" aria-hidden="true"></i> View</button><button class="btn btn-outline-primary" type="button" data-action="edit" data-id="${app.id}" aria-label="Edit ${app.company} application"><i class="bi bi-pencil" aria-hidden="true"></i> Edit</button><button class="btn btn-outline-danger" type="button" data-action="delete" data-id="${app.id}" aria-label="Delete ${app.company} application"><i class="bi bi-trash" aria-hidden="true"></i> Delete</button></div></td></tr>`).join('')
-   :`<tr><td colspan="6"><div class="empty-state"><i class="bi bi-${APPS.length?'search':'briefcase'}" aria-hidden="true"></i>${APPS.length?'No applications match. Clear the search or filter.':'No applications yet. Add your first application to get started.'}</div></td></tr>`;
+  tbody.innerHTML=rows.length?rows.map(app=>`<tr><td class="fw-bold">${escapeHTML(app.company)}</td><td>${escapeHTML(app.industry)}</td><td>${escapeHTML(app.role)}</td><td>${escapeHTML(app.city)}</td><td>${escapeHTML(app.date)}</td>
+   <td><span class="badge-st ${statusClass(app.status)}">${escapeHTML(app.status)}</span></td><td><div class="application-actions"><button class="btn btn-outline-secondary" type="button" data-action="view" data-id="${app.id}" aria-label="View ${escapeHTML(app.company)} application"><i class="bi bi-eye" aria-hidden="true"></i> View</button><button class="btn btn-outline-primary" type="button" data-action="edit" data-id="${app.id}" aria-label="Edit ${escapeHTML(app.company)} application"><i class="bi bi-pencil" aria-hidden="true"></i> Edit</button><button class="btn btn-outline-danger" type="button" data-action="delete" data-id="${app.id}" aria-label="Delete ${escapeHTML(app.company)} application"><i class="bi bi-trash" aria-hidden="true"></i> Delete</button></div></td></tr>`).join('')
+   :`<tr><td colspan="7"><div class="empty-state"><i class="bi bi-${APPS.length?'search':'briefcase'}" aria-hidden="true"></i>${APPS.length?'No applications match. Clear the search or filter.':'No applications yet. Add your first application to get started.'}</div></td></tr>`;
   count.textContent=rows.length+' of '+APPS.length+' shown';
  };
  const openApplication=(app,editing)=>{
   const creating=!app;
-  const details=app||{company:'',role:'',city:'',date:'',status:'Applied'};
+  const details=app||{company:'',industry:'',role:'',city:'',date:'',status:'Applied'};
   document.getElementById('applicationModalTitle').textContent=creating?'Add application':editing?'Edit application':'Application details';
   document.getElementById('appId').value=app?app.id:'';
-  document.getElementById('appCompany').value=details.company;
+  companyInput.value=details.company;
+  industryInput.value=details.industry;
   document.getElementById('appRole').value=details.role;
   document.getElementById('appCity').value=details.city;
   document.getElementById('appDate').value=details.date;
   document.getElementById('appStatus').value=details.status;
-  document.getElementById('appCompany').readOnly=!creating;
+  companyInput.readOnly=!creating;
+  industryInput.readOnly=!editing;
   document.getElementById('appRole').readOnly=!editing;
   document.getElementById('appCity').readOnly=!editing;
   document.getElementById('appDate').readOnly=!editing;
@@ -224,7 +238,17 @@ function initApplications(){
   document.getElementById('saveApplication').textContent=creating?'Add application':'Save changes';
   modal.show();
  };
+ companyInput.addEventListener('change',()=>{
+  if(document.getElementById('appId').value)return;
+  industryInput.value=companyIndustry(companyInput.value);
+ });
  document.getElementById('addApplication').addEventListener('click',()=>openApplication(null,true));
+ const newCompany=params.get('newCompany');
+ if(newCompany){
+  openApplication(null,true);
+  companyInput.value=newCompany;
+  industryInput.value=params.get('industry')||companyIndustry(newCompany);
+ }
  [searchInput,statusFilter,companyFilter,dateFilter,sortSelect].forEach(control=>control.addEventListener(control===searchInput?'input':'change',draw));
  tbody.addEventListener('click',event=>{
   const button=event.target.closest('button[data-action]');
@@ -248,7 +272,8 @@ function initApplications(){
   const creating=!id;
   if(creating)app={id:APPS.reduce((max,item)=>Math.max(max,item.id),0)+1};
   if(!app)return;
-  app.company=document.getElementById('appCompany').value.trim();
+  app.company=companyInput.value.trim();
+  app.industry=industryInput.value.trim();
   app.role=document.getElementById('appRole').value.trim();
   app.city=document.getElementById('appCity').value.trim();
   app.date=document.getElementById('appDate').value;
@@ -264,7 +289,7 @@ function initApplications(){
   saveApplications();
   modal.hide();
   draw();
-  showToast('Application updated.');
+  showToast(creating?'Application added.':'Application updated.');
  });
  draw();
 }
@@ -272,25 +297,51 @@ function initApplications(){
 // Companies
 function initCompanies(){
  layout('companies.html');
+ loadApplications();
  const searchInput=document.getElementById('companySearch');
  const industryFilter=document.getElementById('industryFilter');
- [...new Set(COMPANIES.map(company=>company.industry))].sort().forEach(industry=>industryFilter.add(new Option(industry,industry)));
+ const companyList=()=>{
+  const tracked=APPS.reduce((groups,app)=>{
+   const key=app.company.trim().toLowerCase();
+   if(!groups[key])groups[key]=[];
+   groups[key].push(app);
+   return groups;
+  },{});
+  const companies=COMPANIES.map(company=>({...company,applications:tracked[company.name.toLowerCase()]||[]}));
+  Object.keys(tracked).forEach(key=>{
+   if(!companies.some(company=>company.name.toLowerCase()===key)){
+    const applications=tracked[key];
+    companies.push({name:applications[0].company,industry:applications[0].industry,city:applications[0].city,allowance:null,open:null,applications});
+   }
+  });
+  return companies.map(company=>({...company,industry:company.industry||company.applications[0]?.industry||'Other'}));
+ };
+ const companies=companyList();
+ [...new Set(companies.map(company=>company.industry))].sort().forEach(industry=>industryFilter.add(new Option(industry,industry)));
  const render=()=>{
   const query=searchInput.value.trim().toLowerCase();
-  const companies=COMPANIES.filter(company=>(industryFilter.value==='All'||company.industry===industryFilter.value)
-   &&(company.name+' '+company.industry+' '+company.city).toLowerCase().includes(query));
-  document.getElementById('grid').innerHTML=companies.length?companies.map(company=>`<article class="panel company-card">
-   <div class="company-card-top"><span class="company-avatar" aria-hidden="true">${company.name.charAt(0)}</span><div><h2>${company.name}</h2><p>${company.industry} &middot; ${company.city}</p></div></div>
-   <div class="d-flex justify-content-between align-items-center"><span class="badge-st status-offer"><i class="bi bi-check-circle me-1" aria-hidden="true"></i>${company.open} open roles</span></div>
-   <div class="company-meta"><span>Monthly allowance</span><strong>RM ${company.allowance.toLocaleString()}</strong></div>
-   <div class="company-meta"><span>Location</span><strong>${company.city}</strong></div>
-   <a class="btn btn-outline-primary mt-auto" href="applications.html?company=${encodeURIComponent(company.name)}"><i class="bi bi-briefcase" aria-hidden="true"></i> View applications</a>
-  </article>`).join(''):'<div class="panel empty-state"><i class="bi bi-buildings" aria-hidden="true"></i>No companies match your search.</div>';
+  const visibleCompanies=companies.filter(company=>(industryFilter.value==='All'||company.industry===industryFilter.value)
+   &&(company.name+' '+company.industry+' '+company.city+' '+company.applications.map(app=>app.role).join(' ')).toLowerCase().includes(query));
+  document.getElementById('grid').innerHTML=visibleCompanies.length?visibleCompanies.map(company=>{
+   const name=escapeHTML(company.name),industry=escapeHTML(company.industry),city=escapeHTML(company.city);
+   const tracked=company.applications;
+   const trackedMarkup=tracked.length?`<div class="company-tracking"><strong>Your applications (${tracked.length})</strong><ul class="company-application-list">${tracked.map(app=>`<li><span>${escapeHTML(app.role)}</span><span class="badge-st ${BADGE[app.status]||BADGE.Applied}">${escapeHTML(app.status)}</span></li>`).join('')}</ul></div>`:'<p class="small text-muted mb-0">No applications tracked yet.</p>';
+   const listing=company.open===null?'<div class="company-meta"><span>Open roles / allowance</span><strong>Not listed</strong></div>':`<div class="company-meta"><span>Open roles</span><strong>${company.open}</strong></div><div class="company-meta"><span>Monthly allowance</span><strong>RM ${company.allowance.toLocaleString()}</strong></div>`;
+   return `<article class="panel company-card">
+   <div class="company-card-top"><span class="company-avatar" aria-hidden="true">${escapeHTML(company.name.charAt(0))}</span><div><h2>${name}</h2><p><span class="company-type">${industry}</span> &middot; ${city}</p></div></div>
+   ${listing}
+   <div class="company-meta"><span>Location</span><strong>${city}</strong></div>
+   ${trackedMarkup}
+   <a class="btn btn-outline-primary mt-auto" href="applications.html?newCompany=${encodeURIComponent(company.name)}&amp;industry=${encodeURIComponent(company.industry)}"><i class="bi bi-plus-lg" aria-hidden="true"></i> Track an application</a>
+   ${tracked.length?`<a class="btn btn-link" href="applications.html?company=${encodeURIComponent(company.name)}"><i class="bi bi-list-ul" aria-hidden="true"></i> View applications</a>`:''}
+  </article>`;
+  }).join(''):'<div class="panel empty-state"><i class="bi bi-buildings" aria-hidden="true"></i>No companies match your search.</div>';
  };
  searchInput.addEventListener('input',render);
  industryFilter.addEventListener('change',render);
  render();
+ const allowanceCompanies=companies.filter(company=>company.allowance!==null);
  new Chart(document.getElementById('allowChart'),{type:'bar',
-  data:{labels:COMPANIES.map(c=>c.name),datasets:[{label:'Monthly allowance (RM)',data:COMPANIES.map(c=>c.allowance),backgroundColor:'#2A9D8F'}]},
+  data:{labels:allowanceCompanies.map(c=>c.name),datasets:[{label:'Monthly allowance (RM)',data:allowanceCompanies.map(c=>c.allowance),backgroundColor:'#2A9D8F'}]},
   options:{maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}}}});
 }
