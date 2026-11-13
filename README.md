@@ -12,7 +12,8 @@ A static web application for tracking internship applications, reviewing progres
 - Shared responsive Bootstrap navigation, breadcrumbs, signed-in profile, and footer on authenticated pages.
 - Personalized dashboard summary cards with status deep-links, recent-application filtering, interview follow-ups, progress bars, and interactive Chart.js charts.
 - User-specific application data with add, search, status/company/year filters, sorting, edit, and delete controls. New accounts start with no applications.
-- Searchable company cards and an allowance chart.
+- Application company type / industry is saved with each record and shown in the applications list, dashboard, and company directory. Company cards also summarize tracked roles and statuses.
+- Searchable company cards, dynamic filters, and an allowance chart. The dashboard includes a rejected-applications summary card.
 - Responsive layouts: one column below 600px, two columns from 600px, and three to four columns from 1024px.
 
 ## How to test login
